@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Frutas Favoritas</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    input, button { margin: 5px; padding: 8px; }
+    .fruta { margin: 5px 0; }
+  </style>
+</head>
+<body>
+  <h1>🍎 Frutas Favoritas</h1>
+
+  <!-- Formulario para agregar fruta -->
+  <input type="text" id="nombreFruta" placeholder="Nombre de la fruta" />
+  <button onclick="agregarFruta()">Agregar</button>
+
+  <!-- Campo para filtrar -->
+  <input type="text" id="filtroNombre" placeholder="Buscar por nombre" oninput="obtenerFrutas()" />
+
+  <h3>Lista de frutas:</h3>
+  <div id="listaFrutas"></div>
+
+  <script>
+    const API_URL = "http://localhost:5000/frutas";  // Cambiar si usas otro host o puerto
+
+    async function obtenerFrutas() {
+      const filtro = document.getElementById("filtroNombre").value;
+      const url = filtro ? `${API_URL}?nombre=${filtro}` : API_URL;
+      const res = await fetch(url);
+      const frutas = await res.json();
+
+      const lista = document.getElementById("listaFrutas");
+      lista.innerHTML = "";
+
+      frutas.forEach(f => {
+        const div = document.createElement("div");
+        div.className = "fruta";
+        div.innerHTML = `
+          <strong>${f.nombre}</strong> (ID: ${f.id})
+          <button onclick="eliminarFruta(${f.id})">Eliminar</button>
+          <button onclick="mostrarActualizar(${f.id}, '${f.nombre}')">Actualizar</button>
+        `;
+        lista.appendChild(div);
+      });
+    }
+
+    async function agregarFruta() {
+      const nombre = document.getElementById("nombreFruta").value;
+      if (!nombre) return alert("Escribe el nombre de una fruta");
+
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre })
+      });
+
+      document.getElementById("nombreFruta").value = "";
+      obtenerFrutas();
+    }
+
+    async function eliminarFruta(id) {
+      await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      obtenerFrutas();
+    }
+
+    function mostrarActualizar(id, nombreActual) {
+      const nuevoNombre = prompt("Nuevo nombre:", nombreActual);
+      if (!nuevoNombre) return;
+
+      fetch(`${API_URL}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: nuevoNombre })
+      }).then(obtenerFrutas);
+    }
+
+    obtenerFrutas();  // Cargar al inicio
+  </script>
+</body>
+</html>
